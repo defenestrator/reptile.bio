@@ -1,0 +1,133 @@
+<x-app-layout>
+@section('title', $animal->pet_name)
+    @push('meta')
+    @php
+        $parts = array_filter([
+            $animal->pet_name,
+            $animal->category ? $animal->category . ' · ' . ($animal->female ? 'Female' : 'Male') : null,
+            $animal->availability?->label(),
+            $animal->description ? \Illuminate\Support\Str::limit(strip_tags($animal->description), 100) : 'Captive-bred at Reptile Bio.',
+        ]);
+    @endphp
+    <meta name="description" content="{{ implode(' — ', $parts) }}">
+    @endpush
+    <x-slot name="header">
+        <h2 class="font-semibold text-xl text-gray-800 dark:text-gray-200 leading-tight">
+            {{ $animal->pet_name }}
+        </h2>
+    </x-slot>
+
+    <div class="py-12">
+        <div class="max-w-4xl mx-auto sm:px-6 lg:px-8">
+            <div class="bg-white dark:bg-gray-800 overflow-hidden shadow-sm sm:rounded-lg">
+
+                {{-- Photo Gallery --}}
+                @if ($animal->media->isNotEmpty())
+                    @php $photos = $animal->media; @endphp
+                    <div x-data="{ active: '{{ $photos->first()->url }}' }">
+                        <div class="w-full aspect-square bg-black overflow-hidden">
+                            <img :src="active" alt="{{ $animal->pet_name }}"
+                                class="w-full h-full object-contain">
+                        </div>
+
+                        @if ($photos->count() > 1)
+                            <div class="flex gap-2 p-3 overflow-x-auto bg-gray-100 dark:bg-gray-900">
+                                @foreach ($photos as $photo)
+                                    <button type="button"
+                                        @click="active = '{{ $photo->url }}'"
+                                        :class="active === '{{ $photo->url }}' ? 'ring-2 ring-amber-500' : 'opacity-70 hover:opacity-100'"
+                                        class="flex-shrink-0 rounded overflow-hidden transition">
+                                        <img src="{{ $photo->url }}" alt="{{ $animal->pet_name }}"
+                                            class="h-16 w-16 object-cover">
+                                    </button>
+                                @endforeach
+                            </div>
+                        @endif
+                    </div>
+                @endif
+
+                <div class="p-6">
+                    {{-- Availability + Sex badges --}}
+                    <div class="mb-4 flex gap-2 flex-wrap">
+                        @if ($animal->availability)
+                            <span class="inline-block px-3 py-1 text-sm font-semibold rounded-full {{ $animal->availability->badgeClasses() }}">
+                                {{ $animal->availability->label() }}
+                            </span>
+                        @endif
+                        <span class="inline-block px-3 py-1 text-sm rounded-full bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400">
+                            {{ $animal->female ? 'Female' : 'Male' }}
+                        </span>
+                        @if ($animal->proven_breeder)
+                            <span class="inline-block px-3 py-1 text-sm rounded-full bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-400">
+                                Proven Breeder
+                            </span>
+                        @endif
+                    </div>
+
+                    <h1 class="text-3xl font-bold text-amber-600 dark:text-amber-400 mb-1">
+                        {{ $animal->pet_name }}
+                    </h1>
+                    @if ($animal->species)
+                        <p class="text-sm italic text-gray-400 dark:text-gray-500 mb-2">
+                            <a href="{{ route('species.show', $animal->species) }}" class="hover:text-amber-500 hover:underline transition">
+                                {{ $animal->species->species }}
+                            </a>
+                        </p>
+                    @endif
+
+                    @if ($animal->availability === \App\Enums\AnimalAvailability::ForSale)
+                        <div class="flex items-center gap-6 mb-6">
+                            @if ($animal->price)
+                                <span class="text-3xl font-bold text-gray-900 dark:text-gray-100">
+                                    ${{ number_format($animal->price, 2) }}
+                                </span>
+                            @endif
+                            @if (session('inquiry_sent'))
+                                <span class="inline-flex items-center gap-2 bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400 px-4 py-2 rounded-lg font-semibold">
+                                    Inquiry sent — we'll be in touch!
+                                </span>
+                            @else
+                                <a href="{{ route('animals.inquiries.create', $animal) }}"
+                                    class="bg-amber-500 hover:bg-amber-700 text-white font-semibold py-2 px-6 rounded-lg transition">
+                                    Inquire
+                                </a>
+                            @endif
+                        </div>
+                    @else
+                        <div class="mb-6"></div>
+                    @endif
+
+                    <div class="grid grid-cols-2 md:grid-cols-3 gap-4 mb-6 p-4 bg-gray-50 dark:bg-gray-700 rounded-lg">
+                        @if ($animal->category)
+                            <div>
+                                <p class="text-sm text-gray-500 dark:text-gray-400 font-semibold">Category</p>
+                                <p class="text-gray-800 dark:text-gray-200">{{ $animal->category }}</p>
+                            </div>
+                        @endif
+                        @if ($animal->date_of_birth)
+                            <div>
+                                <p class="text-sm text-gray-500 dark:text-gray-400 font-semibold">Date of Birth</p>
+                                <p class="text-gray-800 dark:text-gray-200">{{ $animal->date_of_birth->format('M d, Y') }}</p>
+                            </div>
+                        @endif
+                    </div>
+
+                    @if ($animal->description)
+                        <div class="mb-6">
+                            <h3 class="text-lg font-semibold text-gray-800 dark:text-gray-200 mb-3">Description</h3>
+                            <p class="text-gray-700 dark:text-gray-300 whitespace-pre-wrap">{{ $animal->description }}</p>
+                        </div>
+                    @endif
+
+                    <div>
+                        <a href="{{ route('animals.index') }}"
+                            class="text-amber-600 dark:text-amber-400 hover:underline font-semibold">
+                            ← Back to Animals
+                        </a>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+</x-app-layout>

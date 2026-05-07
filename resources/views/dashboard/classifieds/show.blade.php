@@ -1,0 +1,98 @@
+<x-app-layout>
+@section('title', $classified->title)
+    <x-slot name="header">
+        <h2 class="font-semibold text-xl text-gray-800 dark:text-gray-200 leading-tight">
+            {{ $classified->title }}
+        </h2>
+    </x-slot>
+
+    <div class="py-12">
+        <div class="max-w-4xl mx-auto sm:px-6 lg:px-8">
+            @if(session('success'))
+                <div class="mb-4 bg-green-100 border border-green-400 text-green-800 px-4 py-3 rounded-lg">
+                    {{ session('success') }}
+                </div>
+            @endif
+
+            <div class="bg-white dark:bg-gray-800 overflow-hidden shadow-sm sm:rounded-lg p-6">
+                <!-- Status Badge -->
+                <div class="mb-6">
+                    <span class="inline-block px-3 py-1 text-sm rounded-full
+                        @if ($classified->status === 'published')
+                            bg-green-100 text-green-800
+                        @elseif ($classified->status === 'draft')
+                            bg-gray-100 text-gray-800
+                        @else
+                            bg-red-100 text-red-800
+                        @endif
+                    ">
+                        {{ ucfirst($classified->status) }}
+                    </span>
+                </div>
+
+                <!-- Photo Gallery -->
+                @if ($classified->media->isNotEmpty())
+                    @php $photos = $classified->media; @endphp
+                    <div class="mb-6" x-data="{ active: '{{ $photos->first()->url }}' }">
+                        <div class="w-full bg-black rounded-lg overflow-hidden" style="max-height:480px;">
+                            <img :src="active" alt="{{ $classified->title }}"
+                                class="w-full object-contain mx-auto" style="max-height:480px;">
+                        </div>
+                        @if ($photos->count() > 1)
+                            <div class="flex gap-2 mt-2 overflow-x-auto">
+                                @foreach ($photos as $photo)
+                                    <button type="button"
+                                        @click="active = '{{ $photo->url }}'"
+                                        :class="active === '{{ $photo->url }}' ? 'ring-2 ring-amber-500' : 'opacity-70 hover:opacity-100'"
+                                        class="flex-shrink-0 rounded overflow-hidden transition">
+                                        <img src="{{ $photo->url }}" alt="{{ $classified->title }}"
+                                            class="h-16 w-16 object-cover">
+                                    </button>
+                                @endforeach
+                            </div>
+                        @endif
+                    </div>
+                @endif
+
+                <!-- Title and Price -->
+                <div class="mb-6">
+                    <h1 class="text-3xl font-bold text-amber-600 dark:text-amber-400 mb-2">
+                        {{ $classified->title }}
+                    </h1>
+                    <p class="text-3xl font-bold text-green-600 dark:text-green-400">
+                        ${{ number_format($classified->price, 2) }}
+                    </p>
+                </div>
+
+                <!-- Description -->
+                <div class="mb-6">
+                    <h3 class="text-lg font-semibold text-gray-800 dark:text-gray-200 mb-3">Description</h3>
+                    <p class="text-gray-700 dark:text-gray-300 whitespace-pre-wrap">
+                        {{ $classified->description }}
+                    </p>
+                </div>
+
+                <!-- Action Buttons -->
+                <div class="flex gap-4 mb-6">
+                    <a href="{{ route('dashboard.classifieds.edit', $classified) }}" class="bg-yellow-500 text-white py-2 px-4 rounded-lg hover:bg-yellow-700 font-semibold">
+                        Edit
+                    </a>
+                    <form action="{{ route('dashboard.classifieds.destroy', $classified) }}" method="POST" class="inline-block" onsubmit="return confirm('Are you sure you want to delete this classified?');">
+                        @csrf
+                        @method('DELETE')
+                        <button type="submit" class="bg-red-500 text-white py-2 px-4 rounded-lg hover:bg-red-700 font-semibold">
+                            Delete
+                        </button>
+                    </form>
+                </div>
+
+                <!-- Back Link -->
+                <div>
+                    <a href="{{ route('dashboard.classifieds.index') }}" class="text-amber-600 dark:text-amber-400 hover:underline font-semibold">
+                        ← Back to My Classifieds
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</x-app-layout>
